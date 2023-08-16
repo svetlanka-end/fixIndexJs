@@ -3,7 +3,7 @@
  * from: ProfileInfo
  */
 import PropTypes from "prop-types";
-import moment from "moment";
+import moment from "moment"; // устаревшая библиотека, лучше заменить на новую (много статей на эту тему)
 
 import withValidate from "../../utils/injectValidate";
 import localStor from "../../utils/browser/localStorage";
@@ -22,6 +22,13 @@ import {
   Spinner,
   Range,
 } from "../../UiComponents";
+
+//  общее для всего файла: 
+// - поделить на компоненты, перегруженный компонент (например, вынести чистые функции вроде generatePassword)
+// - использовать деструктуризацию для лучшей читаемости
+// - вынести и переиспользовать отдельные компоненты для повторяющихся элементов JSX
+
+
 
 export const ProfileInfo = (props) => {
   const {
@@ -42,6 +49,7 @@ export const ProfileInfo = (props) => {
     // surnameSuggestions,
     // firstNameSuggestions,
     // patronymicSuggestions,
+    // выше неиспользуемые пропсы? стоит использовать линтер, чтобы такое замечать сразу и исправлять
     phoneVerification,
     username,
     openModal,
@@ -53,27 +61,29 @@ export const ProfileInfo = (props) => {
     whatsAppSetNotifications,
   } = props;
 
-  const showError = (internalErrors, errorsServer) => {
-    if (!errorsServer && !errorsServer.isArray()) return null;
+  const showError = (internalErrors, errorsServer) => {  //  showError логично переделать в useEffect, internalErrors должен быть иммутабельным, текущий код с сайд-эффектами
+    if (!errorsServer && !errorsServer.isArray()) return null; // // Метод isArray() не существует, правильно использовать Array.isArray(errorsServer).
 
     errorsServer.forEach((elem) => {
       internalErrors[elem.key] = elem.message;
-      if (elem.key === "usernameCanonical") {
+      if (elem.key === "usernameCanonical") { // "магические" значения, лучше вынести в переменные
         internalErrors.username = elem.message;
       }
-      if (elem.key === "emailCanonical") {
+      if (elem.key === "emailCanonical") { // вместо нескольких проверок можно сделать объект ошибок, чтобы код был более понятный
         internalErrors.email = elem.message;
       }
     });
   };
+
+  // фунуцию лучше вынести в другой комнонент
 
   const generatePassword = () => {
     const charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-=!@#№$;%^:&?*()_+";
     const length = 10;
     let result = "";
 
-    for (let i = 0; i < length; i++) {
-      result += charset.charAt(Math.floor(Math.random() * charset.length));
+    for (let i = 0; i < length; i++) { // лучше тут использовать Array.from() вместо цикла for
+      result += charset.charAt(Math.floor(Math.random() * charset.length)); // использовать crypto.getRandomValues, чтобы генерировать более безопасные случайные числа
     }
 
     return result;
@@ -114,7 +124,7 @@ export const ProfileInfo = (props) => {
           }}
           error={
             internalErrors.username ||
-            errorsServer.find((el) =>
+            errorsServer.find((el) => //  find на каждый рендер - тяжеловесная операция, лучше переписать
               ["username", "usernameCanonical"].includes(el.key)
             )
           }
@@ -130,8 +140,8 @@ export const ProfileInfo = (props) => {
             label="Пароль"
             value={userInfo.password}
             autoComplete="off"
-            onChange={(value) => setValue(["userInfo", "password"], value)}
-            onBlur={(value) => {
+            onChange={(value) => setValue(["userInfo", "password"], value)} // onChange={(value) => setValue(["userInfo", "password"], value)}
+            onBlur={(value) => { // onBlur={(value) => newUser && validate("password", value)}
               if (newUser) validate("password", value);
             }}
             after={
@@ -277,7 +287,7 @@ export const ProfileInfo = (props) => {
               }}
             />
             <Input
-              // placeholder=''
+              // placeholder='' // пункт про линтер, ненужная строка
               label="СНИЛС"
               maxLength="11"
               id="snils"
@@ -344,7 +354,7 @@ export const ProfileInfo = (props) => {
         />
         {username === userInfo.username &&
           whatsApp &&
-          whatsApp.bot_enabled &&
+          whatsApp.bot_enabled && // можно использовать .? optional chaining для улучшения читаемости
           (whatsApp.bot_started ? (
             <Button
               inline
@@ -430,7 +440,7 @@ export const ProfileInfo = (props) => {
           </Checkbox>
         </FormRow>
       )}
-      {false && isManager && !newUser && (
+      {false && isManager && !newUser && ( // априори неработающее условие, ненужный код?
         <FormRow>
           <Checkbox
             id="sendTrue"
@@ -493,7 +503,7 @@ export const ProfileInfo = (props) => {
   );
 };
 
-ProfileInfo.propTypes = {
+ProfileInfo.propTypes = { // указаны не все пропсы
   errorsServer: PropTypes.array,
   userInfo: PropTypes.object.isRequired,
   setValue: PropTypes.func.isRequired,
